@@ -1,0 +1,10 @@
+data/raw/alphafold/*
+data/raw/go/*
+data/raw/quickgo/*
+data/raw/uniprot/*
+data/raw/uniref/*
+data/processed/emb/*
+coords.tsv
+*.pkl
+*.nx
+save/*
