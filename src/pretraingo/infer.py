@@ -24,6 +24,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
     os.makedirs(args.ptrdir, exist_ok=True)
 
+    with open(os.path.join(args.godir, "term_index.tsv"), "r") as f:
+        idx2n = {}
+        for l in f.readlines()[1:]:
+            n, stri = l.strip().split("\t")
+            idx2n[int(stri)] = n
+
     srcs, etypes, tgts, feat = read_graph(args)
     graph = dgl.graph((srcs, tgts), num_nodes=len(feat), device=args.device)
     feat = torch.stack(feat, dim=0).to(args.device)
@@ -39,11 +45,12 @@ if __name__ == '__main__':
         num_rels=2,
         dropout=0.,
         train=False)
+
     model.load_state_dict(state_dict)
     model.to(args.device).eval()
     with torch.no_grad():
         ptr_feat = model(g=graph, etypes=etypes, feat=feat).cpu().numpy()
-    ptr_feat = {idx: ptr_feat[idx] for idx in range(len(ptr_feat))}
+    ptr_feat = {idx2n[idx]: ptr_feat[idx] for idx in range(len(ptr_feat))}
     with open(os.path.join(args.ptrdir, args.lm+".pkl"), "wb") as f:
         pickle.dump(ptr_feat, f)
     

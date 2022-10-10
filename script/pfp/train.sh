@@ -3,7 +3,7 @@
 ARCH=lstm
 CRITEION=cross_entropy
 
-BRANCH=('cc')
+BRANCH=('bp')
 # BRANCH=('cc' 'mf' 'bp')
 for BR in ${BRANCH[*]}; do
 
@@ -19,9 +19,12 @@ for BR in ${BRANCH[*]}; do
         \
         --branch ${BR} \
         --datadir ./data/processed/quickgo/ \
-        --proembdir ./data/processed/emb/protein \
-        --goembdir ./data/processed/emb/pretrained_go \
+        --seqembdir ./data/processed/emb/protein_seq \
+        --struembdir ./data/processed/emb/protein_stru \
+        --goembfile ./data/processed/emb/pretrained_go/${BR}/bert-base-uncased.pkl \
         --maxlen 800 \
+        --train-subset train \
+        --valid-subset test \
         \
         --task pfp \
         --arch ${ARCH} \

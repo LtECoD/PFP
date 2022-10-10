@@ -6,48 +6,22 @@ import numpy as np
 from fairseq.data import FairseqDataset
 
 
-def read_coords(line):
-    dbid, coord_str = line.strip().split("\t")
-    coord = np.array(list(map(float, coord_str.strip().split()))).reshape(-1, 3)
-    return dbid, coord
-
-
-def read_gos(line):
-    try:
-        dbid, go_str = line.strip().split("\t")
-        gos = go_str.split()
-    except ValueError:
-        gos = []
-    return dbid, gos
-
-
 class PFPDataset(FairseqDataset):
-    def __init__(self, split, args):
+    def __init__(self, split, args, emb_hub):
         self.split = split
 
-        # read protein sequences
-        with open(os.path.join(args.data_dir, split+"_seq.tsv"), "r") as f:
-            self.seqs = dict([line.strip().split("\t") for line in f.readlines()])
-        # read molecular function GO terms
-        with open(os.path.join(args.data_dir, split+"_mf.tsv"), "r") as f:
-            self.mfs = dict([read_gos(line) for line in f.readlines()])
-        # read cc GO terms
-        with open(os.path.join(args.data_dir, split+"_cc.tsv"), "r") as f:
-            self.ccs = dict([read_gos(line) for line in f.readlines()])
-        # read bp Go terms
-        with open(os.path.join(args.data_dir, split+"_bp.tsv"), "r") as f:
-            self.bps = dict([read_gos(line) for line in f.readlines()])
-        if args.with_ca_coord:
-            with open(os.path.join(args.data_dir, split+"_coord.tsv"), "r") as f:
-                self.coords = dict([read_coords(line) for line in f.readlines()])
-        self.dbids = list(self.seqs.keys())
+        self.emb_hub = emb_hub
+        self.max_len = args.maxlen
 
-        self.max_len = args.max_len
-        if args.use_pretrained_emb:
-            self.emb_dim = args.emb_dim
-            self.embs = {}
+        self.pros = [l.strip() for l in \
+            open(os.path.join(args.datadir, args.branch, split+"_pro.tsv"), "r").readlines()]
+        self.terms = [l.strip() for l in \
+            open(os.path.join(args.datadir, args.branch, split+"_term.tsv"), "r").readlines()]
 
-        self.print_statistics()
+        self.pos_samples = []
+        with open(os.path.join(args.datadir, args.branch, split+".tsv"), "r") as f:
+            for l in f.readlines()[1:]:
+                self.pos_samples.append(l.strip().split("\t"))
 
     def get_embed(self, pro):
         emb = np.load(os.path.join(self.emb_dir, pro+".npy"))
@@ -55,20 +29,6 @@ class PFPDataset(FairseqDataset):
         padded_emb = np.zeros((self.max_len, self.emb_dim))
         padded_emb[:pro_len, :] = emb
         return padded_emb, pro_len
-
-    def print_statistics(self):
-        num_of_proteins = len(self.dbids)
-        avg_len = sum([len(seq) for seq in self.seqs.values()]) / num_of_proteins
-        avg_mfs = sum([len(gos) for gos in self.mf.values()]) / num_of_proteins
-        avg_bps = sum([len(gos) for gos in self.bp.values()]) / num_of_proteins
-        avg_ccs = sum([len(gos) for gos in self.cc.values()]) / num_of_proteins
-
-        print(f"========{self.split} Dataset Statistics========")
-        print(f"Number of Proteins: {num_of_proteins}")
-        print(f"Avg Squence Length: {round(avg_len, 3)}")
-        print(f"Avg MF Terms: {round(avg_mfs, 3)}")
-        print(f"Avg BP Terms: {round(avg_bps, 3)}")
-        print(f"Avg CC Terms: {round(avg_ccs, 3)}")
 
 #     def __getitem__(self, index):
 #         fpro, spro, label = self.samples[index]
@@ -93,8 +53,8 @@ class PFPDataset(FairseqDataset):
 #             "label": label}
 #         return sample_dict
     
-#     def __len__(self):
-#         return len(self.samples)
+    def __len__(self):
+        return len(self.samples)
     
 #     def num_tokens(self, index):
 #         """Return the number of tokens in a sample. This value is used to
