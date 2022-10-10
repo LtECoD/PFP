@@ -1,8 +1,8 @@
 import logging
 from fairseq.tasks import register_task, LegacyFairseqTask
 
-from src.pfp.utils import setup_seed
-from src.pfp.reader import PFPDataset
+from pfp.utils import setup_seed
+from pfp.reader import PFPDataset
 
 logger = logging.getLogger(__name__)
 
@@ -12,9 +12,11 @@ class PFPTask(LegacyFairseqTask):
     @staticmethod
     def add_args(parser):
         # data reader arguments
-        parser.add_argument("--data-dir", type=str)
-        parser.add_argument("--emb-dir", type=str)
-        parser.add_argument("--max-len", type=int)
+        parser.add_argument("--cat", type=str, help="category of go graph")
+        parser.add_argument("--datadir", type=str)
+        parser.add_argument('--proembdir', type=str, help="directory storing protein embeddings")
+        parser.add_argument("--goembdir", type=str, help="directory storing GO term embeddings")
+        parser.add_argument("--maxlen", type=int, help="max length of protein sequence")
 
         parser.add_argument("--with-ca-coord", action="store_true", help="whether exploit ca coords of residues")
         parser.add_argument("--use-pretrain-emb", action="store_true", help="whether use pre-trained protein embedding")
@@ -30,10 +32,6 @@ class PFPTask(LegacyFairseqTask):
 
     def load_dataset(self, split, combine=False, **kwargs):
         self.datasets[split] = PFPDataset(split, self.args)
-    
+
     def reduce_metrics(self, logging_outputs, criterion):
         criterion.__class__.reduce_metrics(logging_outputs)
-    
-    def begin_epoch(self, epoch, model):
-        for key in self.datasets:
-            self.datasets[key].shuffle()

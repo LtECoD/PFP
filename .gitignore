@@ -5,6 +5,9 @@ data/raw/uniprot/*
 data/raw/uniref/*
 data/processed/emb/*
 coords.tsv
+pdbs/
 *.pkl
+*.pth
 *.nx
 save/*
+__pycache__

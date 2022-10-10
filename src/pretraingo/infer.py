@@ -22,8 +22,9 @@ if __name__ == '__main__':
     parser.add_argument("--dropout", type=float)
     parser.add_argument("--device", type=int)
     args = parser.parse_args()
+    os.makedirs(args.ptrdir, exist_ok=True)
 
-    srcs, etypes, tgts, nclass, feat = read_graph(args)
+    srcs, etypes, tgts, feat = read_graph(args)
     graph = dgl.graph((srcs, tgts), num_nodes=len(feat), device=args.device)
     feat = torch.stack(feat, dim=0).to(args.device)
     etypes = torch.LongTensor(etypes).to(args.device)
