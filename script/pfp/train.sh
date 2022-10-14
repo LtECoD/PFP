@@ -1,38 +1,32 @@
 #! /bin/bash
 
-ARCH=lstm
-CRITEION=cross_entropy
-
-BRANCH=('bp')
+BRANCH=('mf')
 # BRANCH=('cc' 'mf' 'bp')
-for BR in ${BRANCH[*]}; do
 
-    fairseq-train \
-        --user-dir src/pfp \
-        --save-dir ./save/pfp/${ARCH} \
-        --seed 100 \
-        \
-        --optimizer adam \
-        --lr 3e-4 \
-        --batch-size 16 \
-        --max-epoch 5 \
-        \
+for BR in ${BRANCH[*]}; do
+    python src/pfp/train.py \
         --branch ${BR} \
         --datadir ./data/processed/quickgo/ \
-        --seqembdir ./data/processed/emb/protein_seq \
-        --struembdir ./data/processed/emb/protein_stru \
-        --goembfile ./data/processed/emb/pretrained_go/${BR}/bert-base-uncased.pkl \
+        --seqemb ./data/processed/emb/protein_seq \
+        --struemb ./data/processed/emb/protein_stru \
+        --goemb ./data/processed/emb/pretrained_go/${BR}/bert-base-uncased.pkl \
         --maxlen 800 \
-        --train-subset train \
-        --valid-subset test \
+        --batchmode term \
+        --batchpro 16 \
+        --shuffle \
         \
-        --task pfp \
-        --arch ${ARCH} \
-        # # --criterion ${CRITEION} \
-        # # # \
-        # # # --dropout 0.2 \
-        # # # --emb-dim 1024 \
-        # # # --hid-dim 256 \
-        # # # --trans-layers 8
-
+        --seqembsize 1024 \
+        --struembsize 256 \
+        --goembsize 256 \
+        --hidsize 256 \
+        --layers 6 \
+        --dropout 0.2 \
+        \
+        --device 0 1 \
+        --seed 100 \
+        --savedir ./save/pfp/${ARCH} \
+        --lr 3e-4 \
+        --steps 100000 \
+        --validinterval 1000 \
+    
 done

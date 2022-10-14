@@ -1,29 +1,11 @@
-import random
-import torch
-import numpy as np
 
-
-def setup_seed(seed):
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-
-
-def get_padding_mask(seq_len, max_len):
-    """Get the mask according to the length"""
-    padding_mask = torch.arange(max_len).view(1, -1).repeat(seq_len.size(0), 1) # B x L
-    padding_mask = padding_mask.to(seq_len.device)
-    padding_mask = padding_mask >= seq_len.view(-1, 1)
-    padding_mask.requres_grad = False
-    return padding_mask     # B x L
-
-
-def get_pro_rep(encs, lens):
-    """Get the average pooling of residue reps into a 1d protein rep"""
-    padding_mask = get_padding_mask(lens, max_len=encs.size(1))
-    rep = encs * (1.-padding_mask.type_as(encs)).unsqueeze(-1)
-    rep = torch.sum(rep, dim=1)
-    rep = torch.div(rep, lens.unsqueeze(-1))
-    return rep
+def read_file(fp, skip_header=False, split=False):
+    with open(fp, "r") as f:
+        lines = f.readlines()
+        if skip_header:
+            lines = lines[1:]
+    if split:
+        items = [l.strip().split("\t") for l in lines]
+    else:
+        items = [l.strip() for l in lines]
+    return items
